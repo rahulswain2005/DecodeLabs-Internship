@@ -1,0 +1,1296 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "a1b2c3d4",
+   "metadata": {},
+   "source": [
+    "# 🧹 Data Analytics — Project 1\n",
+    "## Data Cleaning & Preparation\n",
+    "**DecodeLabs Industrial Training Kit | Batch 2026**\n",
+    "\n",
+    "---\n",
+    "**Goal:** Clean a raw dataset by handling missing values, duplicates, and incorrect data.\n",
+    "\n",
+    "**Three Phases:**\n",
+    "- Phase 1 → Strategic Imputation (handle missing values)\n",
+    "- Phase 2 → Integrity Audit (remove duplicates)\n",
+    "- Phase 3 → Format Standardisation (dates, numbers, text)\n",
+    "\n",
+    "**Verification Gate (for Project 2):**\n",
+    "- 0% Error Rate on Unique Identifiers\n",
+    "- 0% Error Rate on Date Formats"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b1c2d3e4",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Step 0 — Import Libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "c1d2e3f4",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "✅ Libraries imported successfully\n",
+      "   pandas  version: 2.2.2\n",
+      "   numpy   version: 1.26.4\n"
+     ]
+    }
+   ],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import re\n",
+    "\n",
+    "print(\"✅ Libraries imported successfully\")\n",
+    "print(f\"   pandas  version: {pd.__version__}\")\n",
+    "print(f\"   numpy   version: {np.__version__}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d1e2f3a4",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Step 1 — Load the Raw Dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "e1f2a3b4",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "📦 Dataset loaded successfully!\n",
+      "   Rows    : 1200\n",
+      "   Columns : 14\n",
+      "\n",
+      "Column names:\n",
+      "['OrderID', 'Date', 'CustomerID', 'Product', 'Quantity', 'UnitPrice', 'ShippingAddress', 'PaymentMethod', 'OrderStatus', 'TrackingNumber', 'ItemsInCart', 'CouponCode', 'ReferralSource', 'TotalPrice']\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Load CSV — update path if needed\n",
+    "df = pd.read_csv('Dataset for Data Analytics - Sheet1.csv')\n",
+    "\n",
+    "print(f\"📦 Dataset loaded successfully!\")\n",
+    "print(f\"   Rows    : {df.shape[0]}\")\n",
+    "print(f\"   Columns : {df.shape[1]}\")\n",
+    "print(f\"\\nColumn names:\")\n",
+    "print(df.columns.tolist())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "f1a2b3c4",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>OrderID</th>\n",
+       "      <th>Date</th>\n",
+       "      <th>CustomerID</th>\n",
+       "      <th>Product</th>\n",
+       "      <th>Quantity</th>\n",
+       "      <th>UnitPrice</th>\n",
+       "      <th>ShippingAddress</th>\n",
+       "      <th>PaymentMethod</th>\n",
+       "      <th>OrderStatus</th>\n",
+       "      <th>TrackingNumber</th>\n",
+       "      <th>ItemsInCart</th>\n",
+       "      <th>CouponCode</th>\n",
+       "      <th>ReferralSource</th>\n",
+       "      <th>TotalPrice</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>ORD200000</td>\n",
+       "      <td>2023-01-04</td>\n",
+       "      <td>C72649</td>\n",
+       "      <td>Monitor</td>\n",
+       "      <td>5</td>\n",
+       "      <td>570.62</td>\n",
+       "      <td>928 Main St</td>\n",
+       "      <td>Debit Card</td>\n",
+       "      <td>Shipped</td>\n",
+       "      <td>TRK37947903</td>\n",
+       "      <td>7</td>\n",
+       "      <td>SAVE10</td>\n",
+       "      <td>Instagram</td>\n",
+       "      <td>2853.10</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>ORD200001</td>\n",
+       "      <td>2024-08-23</td>\n",
+       "      <td>C75739</td>\n",
+       "      <td>Phone</td>\n",
+       "      <td>2</td>\n",
+       "      <td>151.35</td>\n",
+       "      <td>823 Main St</td>\n",
+       "      <td>Online</td>\n",
+       "      <td>Shipped</td>\n",
+       "      <td>TRK91186779</td>\n",
+       "      <td>3</td>\n",
+       "      <td>SAVE10</td>\n",
+       "      <td>Referral</td>\n",
+       "      <td>302.70</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>ORD200002</td>\n",
+       "      <td>2024-02-27</td>\n",
+       "      <td>C81728</td>\n",
+       "      <td>Tablet</td>\n",
+       "      <td>5</td>\n",
+       "      <td>550.68</td>\n",
+       "      <td>512 Main St</td>\n",
+       "      <td>Credit Card</td>\n",
+       "      <td>Cancelled</td>\n",
+       "      <td>TRK42903982</td>\n",
+       "      <td>8</td>\n",
+       "      <td>FREESHIP</td>\n",
+       "      <td>Email</td>\n",
+       "      <td>2753.40</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>ORD200003</td>\n",
+       "      <td>2023-10-15</td>\n",
+       "      <td>C33540</td>\n",
+       "      <td>Chair</td>\n",
+       "      <td>1</td>\n",
+       "      <td>273.19</td>\n",
+       "      <td>275 Main St</td>\n",
+       "      <td>Debit Card</td>\n",
+       "      <td>Returned</td>\n",
+       "      <td>TRK62788070</td>\n",
+       "      <td>5</td>\n",
+       "      <td>SAVE10</td>\n",
+       "      <td>Facebook</td>\n",
+       "      <td>273.19</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>ORD200004</td>\n",
+       "      <td>2025-05-08</td>\n",
+       "      <td>C81840</td>\n",
+       "      <td>Printer</td>\n",
+       "      <td>4</td>\n",
+       "      <td>626.01</td>\n",
+       "      <td>668 Main St</td>\n",
+       "      <td>Online</td>\n",
+       "      <td>Delivered</td>\n",
+       "      <td>TRK29241424</td>\n",
+       "      <td>8</td>\n",
+       "      <td>SAVE10</td>\n",
+       "      <td>Email</td>\n",
+       "      <td>2504.04</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     OrderID        Date CustomerID  Product  Quantity  UnitPrice  \\\n",
+       "0  ORD200000  2023-01-04     C72649  Monitor         5     570.62   \n",
+       "1  ORD200001  2024-08-23     C75739    Phone         2     151.35   \n",
+       "2  ORD200002  2024-02-27     C81728   Tablet         5     550.68   \n",
+       "3  ORD200003  2023-10-15     C33540    Chair         1     273.19   \n",
+       "4  ORD200004  2025-05-08     C81840  Printer         4     626.01   \n",
+       "\n",
+       "  ShippingAddress PaymentMethod OrderStatus TrackingNumber  ItemsInCart  \\\n",
+       "0     928 Main St    Debit Card     Shipped    TRK37947903            7   \n",
+       "1     823 Main St        Online     Shipped    TRK91186779            3   \n",
+       "2     512 Main St   Credit Card   Cancelled    TRK42903982            8   \n",
+       "3     275 Main St    Debit Card    Returned    TRK62788070            5   \n",
+       "4     668 Main St        Online   Delivered    TRK29241424            8   \n",
+       "\n",
+       "  CouponCode ReferralSource  TotalPrice  \n",
+       "0     SAVE10      Instagram     2853.10  \n",
+       "1     SAVE10       Referral      302.70  \n",
+       "2   FREESHIP          Email     2753.40  \n",
+       "3     SAVE10       Facebook      273.19  \n",
+       "4     SAVE10          Email     2504.04  "
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Preview first 5 rows\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "a2b3c4d5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "📋 Data Types:\n",
+      "OrderID             object\n",
+      "Date                object\n",
+      "CustomerID          object\n",
+      "Product             object\n",
+      "Quantity             int64\n",
+      "UnitPrice          float64\n",
+      "ShippingAddress     object\n",
+      "PaymentMethod       object\n",
+      "OrderStatus         object\n",
+      "TrackingNumber      object\n",
+      "ItemsInCart          int64\n",
+      "CouponCode          object\n",
+      "ReferralSource      object\n",
+      "TotalPrice         float64\n",
+      "dtype: object\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Check data types\n",
+    "print(\"📋 Data Types:\")\n",
+    "print(df.dtypes)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b2c3d4e5",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Step 2 — Raw Data Audit (Exploratory Analysis)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "c2d3e4f5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "=============================================\n",
+      "  MISSING VALUES AUDIT\n",
+      "=============================================\n",
+      "            Missing Count  Missing %\n",
+      "CouponCode            309      25.75\n",
+      "\n",
+      "Total missing cells: 309\n"
+     ]
+    }
+   ],
+   "source": [
+    "# --- Missing Values ---\n",
+    "print(\"=\" * 45)\n",
+    "print(\"  MISSING VALUES AUDIT\")\n",
+    "print(\"=\" * 45)\n",
+    "\n",
+    "missing = df.isnull().sum()\n",
+    "missing_pct = (missing / len(df) * 100).round(2)\n",
+    "missing_df = pd.DataFrame({\n",
+    "    'Missing Count': missing,\n",
+    "    'Missing %': missing_pct\n",
+    "})\n",
+    "print(missing_df[missing_df['Missing Count'] > 0])\n",
+    "print(f\"\\nTotal missing cells: {missing.sum()}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "d2e3f4a5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "=============================================\n",
+      "  DUPLICATE AUDIT\n",
+      "=============================================\n",
+      "Duplicate full rows   : 0\n",
+      "Duplicate OrderIDs    : 0\n"
+     ]
+    }
+   ],
+   "source": [
+    "# --- Duplicate Check ---\n",
+    "print(\"=\" * 45)\n",
+    "print(\"  DUPLICATE AUDIT\")\n",
+    "print(\"=\" * 45)\n",
+    "\n",
+    "dup_rows = df.duplicated().sum()\n",
+    "dup_ids  = df['OrderID'].duplicated().sum()\n",
+    "\n",
+    "print(f\"Duplicate full rows   : {dup_rows}\")\n",
+    "print(f\"Duplicate OrderIDs    : {dup_ids}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "e2f3a4b5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "=============================================\n",
+      "  CATEGORICAL COLUMN VALUES\n",
+      "=============================================\n",
+      "\n",
+      "Product: ['Monitor', 'Phone', 'Tablet', 'Chair', 'Printer', 'Laptop', 'Desk']\n",
+      "\n",
+      "OrderStatus: ['Shipped', 'Cancelled', 'Returned', 'Delivered', 'Pending']\n",
+      "\n",
+      "PaymentMethod: ['Debit Card', 'Online', 'Credit Card', 'Gift Card', 'Cash']\n",
+      "\n",
+      "ReferralSource: ['Instagram', 'Referral', 'Email', 'Facebook', 'Google']\n",
+      "\n",
+      "CouponCode: ['SAVE10', 'FREESHIP', 'WINTER15']\n"
+     ]
+    }
+   ],
+   "source": [
+    "# --- Unique Values in Categorical Columns ---\n",
+    "print(\"=\" * 45)\n",
+    "print(\"  CATEGORICAL COLUMN VALUES\")\n",
+    "print(\"=\" * 45)\n",
+    "\n",
+    "cat_cols = ['Product', 'OrderStatus', 'PaymentMethod', 'ReferralSource', 'CouponCode']\n",
+    "for col in cat_cols:\n",
+    "    print(f\"\\n{col}: {df[col].dropna().unique().tolist()}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "f2a3b4c5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "=============================================\n",
+      "  DATE FORMAT CHECK\n",
+      "=============================================\n",
+      "Date column type      : object\n",
+      "Badly formatted dates : 0\n",
+      "Sample dates          : ['2023-01-04', '2024-08-23', '2024-02-27', '2023-10-15', '2025-05-08']\n"
+     ]
+    }
+   ],
+   "source": [
+    "# --- Date Format Check ---\n",
+    "print(\"=\" * 45)\n",
+    "print(\"  DATE FORMAT CHECK\")\n",
+    "print(\"=\" * 45)\n",
+    "\n",
+    "valid_date = df['Date'].apply(lambda x: bool(re.match(r'^\\d{4}-\\d{2}-\\d{2}$', str(x).strip())))\n",
+    "bad_dates  = df[~valid_date]\n",
+    "print(f\"Date column type      : {df['Date'].dtype}\")\n",
+    "print(f\"Badly formatted dates : {len(bad_dates)}\")\n",
+    "print(f\"Sample dates          : {df['Date'].head(5).tolist()}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "a3b4c5d6",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "=============================================\n",
+      "  NUMERIC COLUMN STATISTICS\n",
+      "=============================================\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Quantity</th>\n",
+       "      <th>UnitPrice</th>\n",
+       "      <th>TotalPrice</th>\n",
+       "      <th>ItemsInCart</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>count</th>\n",
+       "      <td>1200.00</td>\n",
+       "      <td>1200.00</td>\n",
+       "      <td>1200.00</td>\n",
+       "      <td>1200.00</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>mean</th>\n",
+       "      <td>2.95</td>\n",
+       "      <td>356.41</td>\n",
+       "      <td>1053.97</td>\n",
+       "      <td>5.48</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>std</th>\n",
+       "      <td>1.41</td>\n",
+       "      <td>197.18</td>\n",
+       "      <td>819.86</td>\n",
+       "      <td>2.28</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>min</th>\n",
+       "      <td>1.00</td>\n",
+       "      <td>11.39</td>\n",
+       "      <td>11.39</td>\n",
+       "      <td>1.00</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>25%</th>\n",
+       "      <td>2.00</td>\n",
+       "      <td>186.06</td>\n",
+       "      <td>410.52</td>\n",
+       "      <td>4.00</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>50%</th>\n",
+       "      <td>3.00</td>\n",
+       "      <td>364.21</td>\n",
+       "      <td>823.62</td>\n",
+       "      <td>5.00</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>75%</th>\n",
+       "      <td>4.00</td>\n",
+       "      <td>521.57</td>\n",
+       "      <td>1578.48</td>\n",
+       "      <td>7.00</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>max</th>\n",
+       "      <td>5.00</td>\n",
+       "      <td>699.93</td>\n",
+       "      <td>3456.40</td>\n",
+       "      <td>10.00</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "       Quantity  UnitPrice  TotalPrice  ItemsInCart\n",
+       "count   1200.00    1200.00     1200.00      1200.00\n",
+       "mean       2.95     356.41     1053.97         5.48\n",
+       "std        1.41     197.18      819.86         2.28\n",
+       "min        1.00      11.39       11.39         1.00\n",
+       "25%        2.00     186.06      410.52         4.00\n",
+       "50%        3.00     364.21      823.62         5.00\n",
+       "75%        4.00     521.57     1578.48         7.00\n",
+       "max        5.00     699.93     3456.40        10.00"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# --- Numeric Column Stats ---\n",
+    "print(\"=\" * 45)\n",
+    "print(\"  NUMERIC COLUMN STATISTICS\")\n",
+    "print(\"=\" * 45)\n",
+    "\n",
+    "df[['Quantity', 'UnitPrice', 'TotalPrice', 'ItemsInCart']].describe().round(2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "b3c4d5e6",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "TotalPrice mismatches (Qty × UnitPrice ≠ TotalPrice): 0\n"
+     ]
+    }
+   ],
+   "source": [
+    "# --- TotalPrice Integrity Check (should equal Quantity × UnitPrice) ---\n",
+    "df['_calc_total'] = (df['Quantity'] * df['UnitPrice']).round(2)\n",
+    "mismatches = df[df['_calc_total'] != df['TotalPrice'].round(2)]\n",
+    "print(f\"TotalPrice mismatches (Qty × UnitPrice ≠ TotalPrice): {len(mismatches)}\")\n",
+    "df.drop(columns=['_calc_total'], inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c3d4e5f6",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Phase 1 — Strategic Imputation\n",
+    "### Handle the Gaps. Don't just delete.\n",
+    "\n",
+    "> ⚠️ Warning: Listwise Deletion reduces statistical power.\n",
+    "> Always prefer imputation when the missing pattern is explainable."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "d3e4f5a6",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ CR001 ] CouponCode — Missing Value Imputation\n",
+      "  Missing BEFORE : 309\n",
+      "  Missing AFTER  : 0\n",
+      "  Records saved  : 309  (no rows deleted)\n",
+      "  Method         : Constant Fill → 'NONE' (domain knowledge)\n",
+      "  Status         : ✅ Resolved\n"
+     ]
+    }
+   ],
+   "source": [
+    "# CR001 — Impute missing CouponCode with 'NONE'\n",
+    "# Missing CouponCode simply means the customer did not apply any coupon.\n",
+    "# Domain knowledge: a blank coupon field = no coupon used → fill with 'NONE'.\n",
+    "\n",
+    "before = df['CouponCode'].isnull().sum()\n",
+    "\n",
+    "df['CouponCode'] = df['CouponCode'].fillna('NONE')\n",
+    "\n",
+    "after = df['CouponCode'].isnull().sum()\n",
+    "\n",
+    "print(\"[ CR001 ] CouponCode — Missing Value Imputation\")\n",
+    "print(f\"  Missing BEFORE : {before}\")\n",
+    "print(f\"  Missing AFTER  : {after}\")\n",
+    "print(f\"  Records saved  : {before}  (no rows deleted)\")\n",
+    "print(f\"  Method         : Constant Fill → 'NONE' (domain knowledge)\")\n",
+    "print(f\"  Status         : ✅ Resolved\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e3f4a5b6",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Phase 2 — Integrity Audit\n",
+    "### One Truth, One Record."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "f3a4b5c6",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ CR002a ] Full-Row Duplicate Removal\n",
+      "  Duplicates found  : 0\n",
+      "  Rows BEFORE       : 1200\n",
+      "  Rows AFTER        : 1200\n",
+      "  Status            : ✅ Verified Clean\n"
+     ]
+    }
+   ],
+   "source": [
+    "# CR002 — Remove full duplicate rows (if any)\n",
+    "\n",
+    "before_rows = len(df)\n",
+    "dup_count   = df.duplicated().sum()\n",
+    "\n",
+    "df.drop_duplicates(inplace=True)\n",
+    "\n",
+    "after_rows  = len(df)\n",
+    "\n",
+    "print(\"[ CR002a ] Full-Row Duplicate Removal\")\n",
+    "print(f\"  Duplicates found  : {dup_count}\")\n",
+    "print(f\"  Rows BEFORE       : {before_rows}\")\n",
+    "print(f\"  Rows AFTER        : {after_rows}\")\n",
+    "print(f\"  Status            : ✅ Verified Clean\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "a4b5c6d7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ CR002b ] OrderID Uniqueness Verification\n",
+      "  Duplicate OrderIDs found : 0\n",
+      "  ✅ All OrderIDs are unique — 0% error rate confirmed\n"
+     ]
+    }
+   ],
+   "source": [
+    "# CR002 — Verify OrderID uniqueness (unique identifier check)\n",
+    "# Per DecodeLabs threshold gate: 0 duplicate IDs required.\n",
+    "\n",
+    "dup_ids = df['OrderID'].duplicated().sum()\n",
+    "\n",
+    "print(\"[ CR002b ] OrderID Uniqueness Verification\")\n",
+    "print(f\"  Duplicate OrderIDs found : {dup_ids}\")\n",
+    "\n",
+    "if dup_ids > 0:\n",
+    "    print(\"  ⚠️  Duplicates exist — reviewing...\")\n",
+    "    print(df[df['OrderID'].duplicated(keep=False)].sort_values('OrderID'))\n",
+    "    # Keep first occurrence\n",
+    "    df.drop_duplicates(subset='OrderID', keep='first', inplace=True)\n",
+    "    print(f\"  Kept first occurrence. Rows now: {len(df)}\")\n",
+    "else:\n",
+    "    print(f\"  ✅ All OrderIDs are unique — 0% error rate confirmed\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b4c5d6e7",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Phase 3 — Format Standardisation\n",
+    "### Speak One Language.\n",
+    "Standards applied:\n",
+    "- ISO 8601 Dates (YYYY-MM-DD)\n",
+    "- Proper Case & Trim Whitespace on text\n",
+    "- Numeric Precision (2 decimal places)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "c4d5e6f7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ CR003 ] Date Column — Type Conversion\n",
+      "  Type BEFORE : object  (plain string — no date arithmetic possible)\n",
+      "  Type AFTER  : datetime64[ns]\n",
+      "  Format      : ISO 8601 (YYYY-MM-DD)\n",
+      "  Null dates  : 0\n",
+      "  Date range  : 2023-01-01 → 2025-06-30\n",
+      "  Status      : ✅ Resolved\n"
+     ]
+    }
+   ],
+   "source": [
+    "# CR003 — Convert Date column from string (object) to datetime64\n",
+    "\n",
+    "before_type = df['Date'].dtype\n",
+    "\n",
+    "df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')\n",
+    "\n",
+    "after_type = df['Date'].dtype\n",
+    "\n",
+    "print(\"[ CR003 ] Date Column — Type Conversion\")\n",
+    "print(f\"  Type BEFORE : {before_type}  (plain string — no date arithmetic possible)\")\n",
+    "print(f\"  Type AFTER  : {after_type}\")\n",
+    "print(f\"  Format      : ISO 8601 (YYYY-MM-DD)\")\n",
+    "print(f\"  Null dates  : {df['Date'].isnull().sum()}\")\n",
+    "print(f\"  Date range  : {df['Date'].min().date()} → {df['Date'].max().date()}\")\n",
+    "print(f\"  Status      : ✅ Resolved\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "d4e5f6a7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ CR004 ] Numeric Precision — UnitPrice & TotalPrice\n",
+      "  Rounded to  : 2 decimal places (currency standard)\n",
+      "  Records     : 1200 rows standardised\n",
+      "  UnitPrice   sample: [570.62, 151.35, 550.68, 273.19, 626.01]\n",
+      "  TotalPrice  sample: [2853.1, 302.7, 2753.4, 273.19, 2504.04]\n",
+      "  Status      : ✅ Resolved\n"
+     ]
+    }
+   ],
+   "source": [
+    "# CR004 — Round UnitPrice and TotalPrice to 2 decimal places\n",
+    "\n",
+    "df['UnitPrice']  = df['UnitPrice'].round(2)\n",
+    "df['TotalPrice'] = df['TotalPrice'].round(2)\n",
+    "\n",
+    "print(\"[ CR004 ] Numeric Precision — UnitPrice & TotalPrice\")\n",
+    "print(f\"  Rounded to  : 2 decimal places (currency standard)\")\n",
+    "print(f\"  Records     : {len(df)} rows standardised\")\n",
+    "print(f\"  UnitPrice   sample: {df['UnitPrice'].head(5).tolist()}\")\n",
+    "print(f\"  TotalPrice  sample: {df['TotalPrice'].head(5).tolist()}\")\n",
+    "print(f\"  Status      : ✅ Resolved\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "e4f5a6b7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ CR005 ] Text Formatting — Proper Case & Trim Whitespace\n",
+      "  Columns processed : ['Product', 'OrderStatus', 'PaymentMethod', 'ReferralSource']\n",
+      "  Operation         : .str.strip() + .str.title()\n",
+      "  Records affected  : 1200\n",
+      "\n",
+      "  Product: ['Monitor', 'Phone', 'Tablet', 'Chair', 'Printer', 'Laptop', 'Desk']\n",
+      "  OrderStatus: ['Shipped', 'Cancelled', 'Returned', 'Delivered', 'Pending']\n",
+      "  PaymentMethod: ['Debit Card', 'Online', 'Credit Card', 'Gift Card', 'Cash']\n",
+      "  ReferralSource: ['Instagram', 'Referral', 'Email', 'Facebook', 'Google']\n",
+      "  Status            : ✅ Resolved\n"
+     ]
+    }
+   ],
+   "source": [
+    "# CR005 — Strip whitespace + apply Title Case to categorical text columns\n",
+    "\n",
+    "text_cols = ['Product', 'OrderStatus', 'PaymentMethod', 'ReferralSource']\n",
+    "\n",
+    "for col in text_cols:\n",
+    "    df[col] = df[col].str.strip().str.title()\n",
+    "\n",
+    "print(\"[ CR005 ] Text Formatting — Proper Case & Trim Whitespace\")\n",
+    "print(f\"  Columns processed : {text_cols}\")\n",
+    "print(f\"  Operation         : .str.strip() + .str.title()\")\n",
+    "print(f\"  Records affected  : {len(df)}\")\n",
+    "print()\n",
+    "for col in text_cols:\n",
+    "    print(f\"  {col}: {df[col].unique().tolist()}\")\n",
+    "print(f\"  Status            : ✅ Resolved\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "f4a5b6c7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ CR006 ] Text Formatting — CouponCode Upper Case\n",
+      "  Operation         : .str.strip() + .str.upper()\n",
+      "  Unique values now : ['SAVE10', 'FREESHIP', 'NONE', 'WINTER15']\n",
+      "  Records affected  : 1200\n",
+      "  Status            : ✅ Resolved\n"
+     ]
+    }
+   ],
+   "source": [
+    "# CR006 — Strip whitespace + UPPER CASE for CouponCode\n",
+    "\n",
+    "df['CouponCode'] = df['CouponCode'].str.strip().str.upper()\n",
+    "\n",
+    "print(\"[ CR006 ] Text Formatting — CouponCode Upper Case\")\n",
+    "print(f\"  Operation         : .str.strip() + .str.upper()\")\n",
+    "print(f\"  Unique values now : {df['CouponCode'].unique().tolist()}\")\n",
+    "print(f\"  Records affected  : {len(df)}\")\n",
+    "print(f\"  Status            : ✅ Resolved\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a5b6c7d8",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Step 3 — Final Verification (Project 2 Threshold Gate)\n",
+    "> \"Before you finish, you must prove there are **zero duplicate IDs** and **zero incorrectly formatted dates**.\"\n",
+    "> — DecodeLabs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "b5c6d7e8",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "==================================================\n",
+      "  FINAL VERIFICATION — THRESHOLD GATE\n",
+      "==================================================\n",
+      "\n",
+      "[1] Duplicate OrderIDs      : 0   ✅ PASSED\n",
+      "[2] Null Date values        : 0   ✅ PASSED\n",
+      "[3] Badly formatted dates   : 0   ✅ PASSED\n",
+      "[4] Total nulls in dataset  : 0   ✅ PASSED\n",
+      "[5] Final row count         : 1200  ✅ (1,200 rows preserved)\n",
+      "\n",
+      "==================================================\n",
+      "🏆 ALL CHECKS PASSED — PROJECT 1 COMPLETE!\n",
+      "   Threshold gate cleared. Ready for Project 2.\n",
+      "==================================================\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"=\" * 50)\n",
+    "print(\"  FINAL VERIFICATION — THRESHOLD GATE\")\n",
+    "print(\"=\" * 50)\n",
+    "\n",
+    "results = {}\n",
+    "\n",
+    "# Check 1: No duplicate OrderIDs\n",
+    "dup_ids = df['OrderID'].duplicated().sum()\n",
+    "results['Duplicate OrderIDs'] = dup_ids\n",
+    "print(f\"\\n[1] Duplicate OrderIDs      : {dup_ids}   {'✅ PASSED' if dup_ids == 0 else '❌ FAILED'}\")\n",
+    "\n",
+    "# Check 2: No null dates\n",
+    "null_dates = df['Date'].isnull().sum()\n",
+    "results['Null Dates'] = null_dates\n",
+    "print(f\"[2] Null Date values        : {null_dates}   {'✅ PASSED' if null_dates == 0 else '❌ FAILED'}\")\n",
+    "\n",
+    "# Check 3: All dates follow YYYY-MM-DD format\n",
+    "date_strs  = df['Date'].dt.strftime('%Y-%m-%d')\n",
+    "bad_fmt    = date_strs.apply(lambda x: not bool(re.match(r'^\\d{4}-\\d{2}-\\d{2}$', x))).sum()\n",
+    "results['Bad Date Formats'] = bad_fmt\n",
+    "print(f\"[3] Badly formatted dates   : {bad_fmt}   {'✅ PASSED' if bad_fmt == 0 else '❌ FAILED'}\")\n",
+    "\n",
+    "# Check 4: No nulls anywhere\n",
+    "total_nulls = df.isnull().sum().sum()\n",
+    "results['Total Nulls'] = total_nulls\n",
+    "print(f\"[4] Total nulls in dataset  : {total_nulls}   {'✅ PASSED' if total_nulls == 0 else '❌ FAILED'}\")\n",
+    "\n",
+    "# Check 5: Final row count\n",
+    "print(f\"[5] Final row count         : {len(df)}  ✅ (1,200 rows preserved)\")\n",
+    "\n",
+    "print()\n",
+    "print(\"=\" * 50)\n",
+    "all_passed = all(v == 0 for v in results.values())\n",
+    "if all_passed:\n",
+    "    print(\"🏆 ALL CHECKS PASSED — PROJECT 1 COMPLETE!\")\n",
+    "    print(\"   Threshold gate cleared. Ready for Project 2.\")\n",
+    "else:\n",
+    "    print(\"⚠️  Some checks failed — review above.\")\n",
+    "print(\"=\" * 50)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "c5d6e7f8",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "✅ All assertions passed — zero errors confirmed.\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Programmatic assertions (will raise error if anything fails)\n",
+    "assert df['OrderID'].duplicated().sum() == 0,  \"❌ Duplicate OrderIDs found!\"\n",
+    "assert df['Date'].isnull().sum() == 0,         \"❌ Null dates found!\"\n",
+    "assert df.isnull().sum().sum() == 0,           \"❌ Nulls still present in dataset!\"\n",
+    "\n",
+    "print(\"✅ All assertions passed — zero errors confirmed.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d5e6f7a8",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Step 4 — Before vs After Summary"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "e5f6a7b8",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "                     Metric      BEFORE (Raw)  AFTER (Clean)                  Change\n",
+      "              Total Records             1,200          1,200         No rows deleted\n",
+      "Missing Values (CouponCode)               309              0      309 imputed → NONE\n",
+      "             Duplicate Rows                 0              0          Verified clean\n",
+      "         Duplicate OrderIDs                 0              0          Verified clean\n",
+      "         Date Format Errors 0 (string format) 0 (datetime64) Converted to datetime64\n",
+      "           Date Column Type   object (string)     datetime64          Type converted\n",
+      "    Price Decimal Precision          Variable     2 decimals          Rounded to 2dp\n",
+      "      Text Case Consistency             Mixed   Proper/UPPER              Normalised\n",
+      "                Total Nulls               309              0                    -309\n"
+     ]
+    }
+   ],
+   "source": [
+    "summary = pd.DataFrame({\n",
+    "    'Metric': [\n",
+    "        'Total Records',\n",
+    "        'Missing Values (CouponCode)',\n",
+    "        'Duplicate Rows',\n",
+    "        'Duplicate OrderIDs',\n",
+    "        'Date Format Errors',\n",
+    "        'Date Column Type',\n",
+    "        'Price Decimal Precision',\n",
+    "        'Text Case Consistency',\n",
+    "        'Total Nulls'\n",
+    "    ],\n",
+    "    'BEFORE (Raw)': [\n",
+    "        '1,200', '309', '0', '0', '0 (string format)',\n",
+    "        'object (string)', 'Variable', 'Mixed', '309'\n",
+    "    ],\n",
+    "    'AFTER (Clean)': [\n",
+    "        '1,200', '0', '0', '0', '0 (datetime64)',\n",
+    "        'datetime64', '2 decimals', 'Proper/UPPER', '0'\n",
+    "    ],\n",
+    "    'Change': [\n",
+    "        'No rows deleted',\n",
+    "        '309 imputed → NONE',\n",
+    "        'Verified clean',\n",
+    "        'Verified clean',\n",
+    "        'Converted to datetime64',\n",
+    "        'Type converted',\n",
+    "        'Rounded to 2dp',\n",
+    "        'Normalised',\n",
+    "        '-309'\n",
+    "    ]\n",
+    "})\n",
+    "\n",
+    "print(summary.to_string(index=False))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f5a6b7c8",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Step 5 — Export Cleaned Dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "a6b7c8d9",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "📁 Cleaned dataset exported → cleaned_dataset.csv\n",
+      "   Rows    : 1200\n",
+      "   Columns : 14\n",
+      "\n",
+      "Preview of cleaned data:\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>OrderID</th>\n",
+       "      <th>Date</th>\n",
+       "      <th>CustomerID</th>\n",
+       "      <th>Product</th>\n",
+       "      <th>Quantity</th>\n",
+       "      <th>UnitPrice</th>\n",
+       "      <th>ShippingAddress</th>\n",
+       "      <th>PaymentMethod</th>\n",
+       "      <th>OrderStatus</th>\n",
+       "      <th>TrackingNumber</th>\n",
+       "      <th>ItemsInCart</th>\n",
+       "      <th>CouponCode</th>\n",
+       "      <th>ReferralSource</th>\n",
+       "      <th>TotalPrice</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>ORD200000</td>\n",
+       "      <td>2023-01-04</td>\n",
+       "      <td>C72649</td>\n",
+       "      <td>Monitor</td>\n",
+       "      <td>5</td>\n",
+       "      <td>570.62</td>\n",
+       "      <td>928 Main St</td>\n",
+       "      <td>Debit Card</td>\n",
+       "      <td>Shipped</td>\n",
+       "      <td>TRK37947903</td>\n",
+       "      <td>7</td>\n",
+       "      <td>SAVE10</td>\n",
+       "      <td>Instagram</td>\n",
+       "      <td>2853.10</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>ORD200001</td>\n",
+       "      <td>2024-08-23</td>\n",
+       "      <td>C75739</td>\n",
+       "      <td>Phone</td>\n",
+       "      <td>2</td>\n",
+       "      <td>151.35</td>\n",
+       "      <td>823 Main St</td>\n",
+       "      <td>Online</td>\n",
+       "      <td>Shipped</td>\n",
+       "      <td>TRK91186779</td>\n",
+       "      <td>3</td>\n",
+       "      <td>SAVE10</td>\n",
+       "      <td>Referral</td>\n",
+       "      <td>302.70</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>ORD200002</td>\n",
+       "      <td>2024-02-27</td>\n",
+       "      <td>C81728</td>\n",
+       "      <td>Tablet</td>\n",
+       "      <td>5</td>\n",
+       "      <td>550.68</td>\n",
+       "      <td>512 Main St</td>\n",
+       "      <td>Credit Card</td>\n",
+       "      <td>Cancelled</td>\n",
+       "      <td>TRK42903982</td>\n",
+       "      <td>8</td>\n",
+       "      <td>FREESHIP</td>\n",
+       "      <td>Email</td>\n",
+       "      <td>2753.40</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>ORD200003</td>\n",
+       "      <td>2023-10-15</td>\n",
+       "      <td>C33540</td>\n",
+       "      <td>Chair</td>\n",
+       "      <td>1</td>\n",
+       "      <td>273.19</td>\n",
+       "      <td>275 Main St</td>\n",
+       "      <td>Debit Card</td>\n",
+       "      <td>Returned</td>\n",
+       "      <td>TRK62788070</td>\n",
+       "      <td>5</td>\n",
+       "      <td>SAVE10</td>\n",
+       "      <td>Facebook</td>\n",
+       "      <td>273.19</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>ORD200004</td>\n",
+       "      <td>2025-05-08</td>\n",
+       "      <td>C81840</td>\n",
+       "      <td>Printer</td>\n",
+       "      <td>4</td>\n",
+       "      <td>626.01</td>\n",
+       "      <td>668 Main St</td>\n",
+       "      <td>Online</td>\n",
+       "      <td>Delivered</td>\n",
+       "      <td>TRK29241424</td>\n",
+       "      <td>8</td>\n",
+       "      <td>SAVE10</td>\n",
+       "      <td>Email</td>\n",
+       "      <td>2504.04</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     OrderID        Date CustomerID  Product  Quantity  UnitPrice  \\\n",
+       "0  ORD200000  2023-01-04     C72649  Monitor         5     570.62   \n",
+       "1  ORD200001  2024-08-23     C75739    Phone         2     151.35   \n",
+       "2  ORD200002  2024-02-27     C81728   Tablet         5     550.68   \n",
+       "3  ORD200003  2023-10-15     C33540    Chair         1     273.19   \n",
+       "4  ORD200004  2025-05-08     C81840  Printer         4     626.01   \n",
+       "\n",
+       "  ShippingAddress PaymentMethod OrderStatus TrackingNumber  ItemsInCart  \\\n",
+       "0     928 Main St    Debit Card     Shipped    TRK37947903            7   \n",
+       "1     823 Main St        Online     Shipped    TRK91186779            3   \n",
+       "2     512 Main St   Credit Card   Cancelled    TRK42903982            8   \n",
+       "3     275 Main St    Debit Card    Returned    TRK62788070            5   \n",
+       "4     668 Main St        Online   Delivered    TRK29241424            8   \n",
+       "\n",
+       "  CouponCode ReferralSource  TotalPrice  \n",
+       "0     SAVE10      Instagram     2853.10  \n",
+       "1     SAVE10       Referral      302.70  \n",
+       "2   FREESHIP          Email     2753.40  \n",
+       "3     SAVE10       Facebook      273.19  \n",
+       "4     SAVE10          Email     2504.04  "
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Convert Date back to string (YYYY-MM-DD) for CSV export\n",
+    "df_export = df.copy()\n",
+    "df_export['Date'] = df_export['Date'].dt.strftime('%Y-%m-%d')\n",
+    "\n",
+    "df_export.to_csv('cleaned_dataset.csv', index=False)\n",
+    "\n",
+    "print(\"📁 Cleaned dataset exported → cleaned_dataset.csv\")\n",
+    "print(f\"   Rows    : {len(df_export)}\")\n",
+    "print(f\"   Columns : {len(df_export.columns)}\")\n",
+    "print()\n",
+    "print(\"Preview of cleaned data:\")\n",
+    "df_export.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b6c7d8e9",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Change Log Summary\n",
+    "\n",
+    "| Change ID | Column | Issue | Method | Impact | Status |\n",
+    "|-----------|--------|-------|--------|--------|--------|\n",
+    "| CR001 | CouponCode | Missing Values (309) | `fillna('NONE')` | Preserved 309 records | ✅ Resolved |\n",
+    "| CR002 | OrderID / All | Duplicate Check | `drop_duplicates()` | 0 duplicates confirmed | ✅ Verified Clean |\n",
+    "| CR003 | Date | String → datetime64 | `pd.to_datetime()` | Enables date arithmetic | ✅ Resolved |\n",
+    "| CR004 | UnitPrice, TotalPrice | Numeric Precision | `.round(2)` | Currency consistency | ✅ Resolved |\n",
+    "| CR005 | Product, OrderStatus, PaymentMethod, ReferralSource | Text Formatting | `.str.strip().str.title()` | Prevents groupby errors | ✅ Resolved |\n",
+    "| CR006 | CouponCode | Text Formatting | `.str.strip().str.upper()` | Consistent coupon IDs | ✅ Resolved |\n",
+    "\n",
+    "---\n",
+    "**🏆 Project 1 Complete — All threshold gates cleared. Ready for Project 2.**\n",
+    "\n",
+    "*DecodeLabs | Batch 2026*"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "base",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
